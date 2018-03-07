@@ -1,0 +1,158 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="pathact-home">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning"></style>
+    <style>
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            font-size: 22px;
+            font-weight: 300;
+            padding-top: 2vh;
+            color: var(--text-primary-color);
+        }
+
+        #main {
+            margin: 0px auto 0px auto;
+            max-width: 785px;
+            padding: 2vh;
+        }
+
+        #image {
+            width: 300px;
+            margin: 10px;
+        }
+
+        #button {
+            font-weight: 400;
+            height: auto;
+            margin: 20px;
+            padding: 20px 30px;
+            font-size: 26px;
+            border-radius: 5px;
+            background-color: var(--dark-button-color);
+        }
+
+        #button:hover {
+            background-color: var(--light-button-color);
+        }
+
+        .application {
+            font-size: 80px;
+            text-shadow: 3px 3px 5px var(--dark-primary-color);
+        }
+
+        .description {
+            font-size: 24px;
+            line-height: 40px;
+            padding-top: 30px;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            text-align: center;
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 1100px) {
+            #image {
+                width: 230px;
+            }
+        }
+
+        @media (max-width: 800px) {
+            #image {
+                width: 150px;
+            }
+            .megatitle {
+                font-size: 50px;
+            }
+        }
+
+        .paragraph {
+            text-align: justify;
+            padding: 10px 0;
+        }
+
+        .paragraph2 {
+            font-size: 14px;
+            padding: 0 0 10px 0;
+        }
+
+        .title {
+            font-size: 40px;
+            padding-top: 30px;
+            padding-bottom: 10px;
+        }
+
+        .title2 {
+            padding-top: 20px;
+            padding-bottom: 10px;
+        }
+
+        .b {
+            font-weight: 400;
+        }
+
+        a,
+        a:visited {
+            text-decoration: none;
+            color: var(--accent-color);
+        }
+
+        .image-partner{
+            height:60px;
+        }
+    </style>
+    <template>
+
+        <div id="main">
+            <div class="horizontal layout center-justified center">
+                <div>
+                    <img id="image" src="../images/icon.svg">
+                </div>
+                <div class="vertical layout center" style="width:465px;">
+                    <div class="application">
+                        Path<span style="font-weight:normal;">Act</span>
+                    </div>
+                    <div class="description">
+                        <b>Act</b>ionable <b>Path</b>way Workshop
+                    </div>
+                    <br>
+                    <div id="button" class="stv-btn stv-btn-shdw" on-click="handleStart" hidden$="{{isLogged}}">
+                        <i class="fa fa-paper-plane"></i> &nbsp; Start
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- <div class="title">Overview:</div> -->
+            <div class="paragraph">
+                PathAct is a web tool that enables the study of the consequences that Knockouts(KOs) or over-expressions of genes can have over signalling pathways. PathAct implements robust models of signalling pathways within an advanced graphical interface that provide a unique interactive working environment in which actionable genes, that could become potential drug targets, can be easily assayed alone or in combinations. Also the effect of drugs with known targets over the different signalling pathways can be studied. Since signals trigger functions across the pathways, the direct and long-distance functional consequences of interventions over genes can be straightforwardly revealed through this actionable pathway scenario.
+            </div>
+
+            <div class="title2">Note:</div>
+            <div class="paragraph2">
+                PathAct web application makes an intensive use of the HTML5 standard and other cutting-edge web technologies such as Web Components, so only modern web browsers are fully supported.
+            </div>
+            <div class="horizontal layout">
+                <!-- <img class="image-partner" src="../images/elixir.svg"> -->
+            </div>
+        </div>
+
+
+    </template>
+    <script>
+        Polymer({
+            is: 'pathact-home',
+            properties: {
+                isLogged: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+            handleStart: function() {
+                this.fire('start');
+            }
+        })
+    </script>
+</dom-module>

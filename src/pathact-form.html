@@ -1,0 +1,550 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="pathact-form">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning"></style>
+    <style>
+        :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            height: 100%;
+            margin: 0px auto 0px auto;
+            max-width: 1400px;
+            background-color: var(--light-secondary-color);
+            @apply(--layout-horizontal);
+        }
+
+        #form {
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #right {
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        #left {
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        #center {
+            margin: 5% 0;
+            border-right: solid 1px var(--divider-color);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--secondary-text-color);
+            font-weight: 300;
+            text-align: center;
+        }
+
+        #selectButton {
+            margin: 0 auto;
+            width: 50%;
+            max-width: 300px;
+        }
+
+        #exampleButton {
+            margin: 0 auto;
+            /*margin: 0 40px 0 auto;*/
+            width: 125px;
+            color: #666;
+        }
+
+        #sampleSelect {
+            margin: 0 auto;
+            width: 70%;
+            max-width: 300px;
+            height: 200px;
+        }
+
+        #nameInput {
+            margin: 0 auto;
+            width: 50%;
+            max-width: 300px;
+        }
+
+        #runButton {
+            height: auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 auto;
+            width: 200px;
+            background-color: var(--dark-button-color) !important;
+            color: var(--text-primary-color) !important;
+        }
+
+        #runButton:hover {
+            background-color: var(--light-button-color) !important;
+        }
+
+        #jobBrowser {
+            border: 1px solid var(--divider-color);
+            background-color: white;
+            /*margin: 30px 40px 15% 40px;*/
+            /*width: calc(100% - 80px);*/
+            /*max-height: 800px;*/
+            height: 600px;
+            width: 80%;
+            min-width: 380px;
+        }
+
+        #fileBrowserPanel {
+            width: 700px;
+            height: 450px;
+            min-width: 700px;
+            min-height: 450px;
+        }
+
+        #url {
+            text-decoration: none;
+            color: var(--dark-button-color);
+        }
+    </style>
+    <template>
+        <form id="form" class="horizontal layout">
+            <div id="left" class="flex">
+                <br>
+                <h1>Create a new job</h1>
+                <div id="exampleButton" class="stv-btn stv-btn-shdw button" on-click="handleLoadExample"> <i class="fa fa-magic"></i>&nbsp;Run example</div>
+                <br>
+                <br>
+                <div class="stv-note pathact-note" style="margin:10px 40px">
+                    1. In order to create a job, a file must be selected from the server, if the file is not already in the server it should be uploaded first, both actions can be performed using the following button.
+                    <br>
+                    <br> Please click
+                    <a id="url" href="http://pathact.babelomics.org/doc/doku.php?id=data_matrix_expression_file" target="_blank">
+                        here <i class="fa fa-external-link"></i>
+                    </a> to read more about the input file format.
+                </div>
+                <div hidden id="inputFileError" class="stv-note stv-note-error" style="margin:10px 40px">
+                    No expression matrix file selected.
+                </div>
+                <div id="selectButton" class="stv-btn stv-btn-shdw" on-click="handleOpenBrowser">
+                    <i class="fa fa-cloud-upload"></i>&nbsp;Select a expression matrix file...
+                </div>
+                <br>
+                <div style="text-align:center">{{inputFile.name}}</div>
+                <br>
+                <br>
+
+                <div class="stv-note pathact-note" style="margin:10px 40px">
+                    2. Now select a sample from your expression matrix file.
+                </div>
+
+                <label style="text-align:center" class="stv-control">
+                    <input id="logarithmCheckbox" type="checkbox">
+                    <span>Log<sub>e</sub> transform data matrix</span>
+                </label>
+                <br>
+
+                <stv-select-box id="sampleSelect" options="{{inputSamples}}" title-attribute="name"></stv-select-box>
+                <br>
+                <br>
+                <br>
+
+                <div class="stv-note pathact-note" style="margin:10px 40px">
+                    3. To finish, set a name for your job, and press the run button.
+                </div>
+                <div hidden id="nameError" class="stv-note stv-note-error" style="margin:10px 40px">
+                    Job name is empty.
+                </div>
+                <div class="horizontal layout">
+                    <input id="nameInput" class="stv" type="text" placeholder="Job name">
+                </div>
+                <br>
+                <br>
+                <div id="runButton" class="stv-btn stv-btn-shdw" on-click="handleRunButton"><i class="fa fa-rocket"></i> Run</div>
+                <br>
+            </div>
+            <div id="center"></div>
+            <div id="right" class="flex vertical layout center">
+                <br>
+                <h1>Use an existing job</h1>
+                <br>
+                <stv-job-browser id="jobBrowser" allowed-tools="{{allowedTools}}" user-data="{{userData}}" hide-status-filter hide-tool-filter disable-relaunch></stv-job-browser>
+            </div>
+
+            <stv-panel hidden fixed modal closable id="fileBrowserPanel">
+                <div class="header">
+                    Select expression matrix file...
+                </div>
+                <stv-file-browser enable-select-ok id="fileBrowser" class="container flex" mode="file" on-fileselect="handleBrowserFileSelect" on-ok-click="handleBrowserOkClick" on-file-uploaded="handleBrowserFileUploaded" bioformats="{{bioformats}}" user-data="{{userData}}"></stv-file-browser>
+            </stv-panel>
+        </form>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'pathact-form',
+            properties: {
+                inputFile: {
+                    type: Object,
+                    value: function() {
+                        return null;
+                    }
+                },
+                inputSamples: {
+                    type: Array
+                },
+                bioformats: {
+                    type: Array
+                },
+                userData: {
+                    type: Object,
+                },
+                allowedTools: {
+                    type: Array
+                },
+                loading: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+            clean: function() {
+                this.$.nameInput.value = '';
+                this.$.fileBrowser.reset();
+                this.set('inputFile', null);
+                this.set('inputSamples', []);
+                this.$.sampleSelect.selected = null;
+                this.$.logarithmCheckbox.checked = false;
+
+                this.$.inputFileError.setAttribute('hidden', '');
+                this.$.nameError.setAttribute('hidden', '');
+            },
+            /**/
+            handleOpenBrowser: function() {
+                this.$.fileBrowserPanel.show();
+            },
+            handleBrowserOkClick: function(e) {
+                var file = e.currentTarget.selectedFile;
+                if (file.bioformat === "DATAMATRIX_EXPRESSION") {
+                    this.set('inputFile', file);
+                    this._getSamplesFromExpressionMatrixFile(file);
+                }
+                if (this.$.fileBrowser.selectedFile != null) {
+                    this.$.inputFileError.setAttribute('hidden', '');
+                } else {
+                    this.$.inputFileError.removeAttribute('hidden');
+                }
+            },
+            handleBrowserFileSelect: function(e) {
+                console.log(e.detail);
+            },
+            handleBrowserFileUploaded: function(e) {
+                var file = e.detail;
+                console.log(file)
+            },
+            _getSamplesFromExpressionMatrixFile: function(file) {
+                var me = this;
+                this.set('inputSamples', []);
+                SteviaManager.getFileContent(file._id, function(content) {
+                    var samples = [];
+                    var line, fields, field;
+                    var lines = content.split(/\r\n|\r|\n/);
+                    if (lines.length > 0) {
+                        line = lines[0];
+                        if (line != '') {
+                            fields = line.split('\t');
+                            for (var i = 1; i < fields.length; i++) {
+                                var field = fields[i];
+                                samples.push({
+                                    name: field
+                                });
+                            }
+                            me.set('inputSamples', samples);
+                        }
+                    }
+                });
+            },
+            handleRunButton: function() {
+                var error = false;
+                if (this.inputFile != null) {
+                    this.$.inputFileError.setAttribute('hidden', '');
+                } else {
+                    this.$.inputFileError.removeAttribute('hidden');
+                    error = true;
+                }
+                if (this.$.nameInput.value != '') {
+                    this.$.nameError.setAttribute('hidden', '');
+                } else {
+                    this.$.nameError.removeAttribute('hidden');
+                    error = true;
+                }
+                if (this.$.sampleSelect.selected == null) {
+                    error = true;
+                }
+                if (error === false) {
+                    this._launchInit(this.inputFile, this.$.nameInput.value + '-' + this.inputFile.name);
+                }
+            },
+            _launchInit: function(file, jobName) {
+                var me = this;
+                var query = {
+                    sid: Cookies("bioinfo_sid"),
+                    name: jobName,
+                    description: '',
+                    outdirId: file.parent
+                };
+                var args = {
+                    tool: 'hipathia',
+                    execution: 'pathact-init',
+                    executable: 'pathact-init.sh',
+                    options: {
+                        "working_folder": {
+                            out: true,
+                        },
+                        "verbose": {
+                            type: 'flag'
+                        },
+                        "exp_file": {
+                            type: 'file',
+                            mode: 'id',
+                            value: file._id,
+                        }
+                    }
+                };
+                if (this.$.sampleSelect.selected != null) {
+                    args.options['sample'] = {
+                        type: 'text',
+                        value: this.$.sampleSelect.selected.name
+                    }
+                }
+                if (this.$.logarithmCheckbox.checked == true) {
+                    args.options['log'] = {
+                        type: 'flag'
+                    }
+                }
+                this._createJob(query, args);
+            },
+            _createJob: function(query, args) {
+                var me = this;
+                SteviaManager.jobs.create({
+                    query: query,
+                    request: {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(args),
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                console.log(response);
+                                // var job = response.response[0].result[0];
+                                // console.log(job);
+                                me.clean();
+                                me.fire('job-launched');
+                                me.fire('need-refresh');
+                                //                                    me.message = job.commandLine;
+                            } else {
+                                console.log('PathAct form: Server error, try again later.');
+                            }
+                        },
+                        error: function() {
+                            console.log('PathAct form: Server error, try again later.');
+                        }
+                    }
+                });
+            },
+            handleLoadExample: function() {
+                var me = this;
+                var query = {
+                    name: 'Example',
+                    description: ''
+                };
+                var args = {
+                    tool: 'hipathia',
+                    execution: 'pathact-init',
+                    executable: 'pathact-init.sh',
+                    options: {
+                        "working_folder": {
+                            out: true,
+                        },
+                        "verbose": {
+                            type: 'flag'
+                        },
+                        "exp_file": {
+                            "type": "file",
+                            "mode": "example",
+                            "value": "brca_genes_vals_bn.txt"
+                        },
+                        "sample": {
+                            "type": "text",
+                            "value": "TCGA.EW.A1OV.01A.11R.A144.07"
+                        },
+                        "log": {
+                            "type": "flag"
+                        }
+                    }
+                };
+                this._createJob(query, args);
+            },
+            _openRemoteFile: function(filepath, cb) {
+                var me = this;
+                var request = new XMLHttpRequest();
+                request.onload = function() {
+                    cb(this.responseText);
+                };
+                request.onerror = function() {
+                    console.log('Error loading remote file');
+                };
+                request.open("GET", filepath);
+                request.send();
+            }
+        });
+    </script>
+</dom-module>
+
+
+<!-- DEPRECATED -->
+<dom-module id="pathact-file-option">
+    <style>
+        :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            word-break: break-all;
+            cursor: pointer;
+        }
+
+        #main {
+            border: 1px solid var(--divider-color);
+            margin-bottom: 2px;
+        }
+
+        :host[data-checked] > #main {
+            border-color: var(--dark-button-color);
+            background-color: #fff3e7;
+        }
+
+        #main:hover {
+            margin-bottom: 2px;
+            background-color: var(--hover-color);
+        }
+
+        .name {
+            margin-right: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .icon {
+            padding: 0 5px 0 2px;
+        }
+
+        .action {
+            width: 80px;
+        }
+
+        .date {
+            color: var(--secondary-text-color);
+            font-size: 11px;
+        }
+
+        .ready {
+            color: #2D7481;
+        }
+
+        .preprocessing {
+            color: #ff8100;
+        }
+
+        .error {
+            color: #880000;
+        }
+
+        .delete {
+            color: var(--secondary-text-color);
+        }
+
+        .delete:hover {
+            color: #880000 !important;
+        }
+    </style>
+    <template>
+        <div id="main" title$="{{file.name}}">
+            <div class="horizontal layout center">
+                <div class="icon"><i class="fa fa-file-o"></i></div>
+                <div class="name flex">{{file.attributes.pathact.jobName}} {{file.name}}</div>
+            </div>
+            <div class="horizontal layout center ready">
+                <div class="icon"><i class$="{{computeStatusIcon(file.attributes.pathact.status)}}"></i></div>
+                <div class="date flex">{{computeDate(file)}}</div>
+                <div hidden$="{{computeDeleteHidden(file.attributes.pathact.status)}}" class="icon delete" on-click="handleDeleteFile"><i class="fa fa-trash-o"></i></div>
+            </div>
+        </div>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: 'pathact-file-option',
+        properties: {
+            file: {
+                type: Object,
+                observer: 'fileChanged'
+            },
+            job: {
+                type: Object
+            }
+        },
+        computeStatusIcon: function(status) {
+            if (status == null) {
+                return '';
+            } else if (status === 'PREPROCESSING') {
+                return 'fa fa-refresh fa-spin preprocessing';
+            } else if (status === 'READY') {
+                return 'fa fa-check ready';
+            } else if (status === 'ERROR') {
+                return 'fa fa-times error';
+            }
+        },
+        computeDate: function(item) {
+            return Utils.parseDate(item.modificationDate);
+        },
+        computeDeleteHidden: function(status) {
+            return status === 'PREPROCESSING';
+        },
+        handleDeleteFile: function(e) {
+            e.stopPropagation();
+            var me = this;
+            if (this.file.attributes.pathact.status === 'READY' || this.file.attributes.pathact.status === 'ERROR') {
+                if (confirm('The file will be deleted, are you sure?')) {
+                    var fileId = this.file.id;
+                    var jobId = this.file.attributes.pathact.jobId;
+                    var folderId = this.file.attributes.pathact.folderId;
+                    var jobFolderId = this.file.attributes.pathact.jobFolderId;
+                    me._deleteFile(fileId, function(r2) {
+                        console.log(r2);
+                    });
+                    me._deleteJob(jobId, function(r) {
+                        console.log(r);
+                    }, false);
+                    me._deleteFile(jobFolderId, function(r2) {
+                        console.log(r2);
+                    });
+                }
+            }
+        },
+        fileChanged: function(neo, old) {
+            var me = this;
+            if (neo.attributes.pathact.status != 'READY') {
+                // console.log('pathact getting job info...');
+                this._getJobBean(neo.attributes.pathact.jobId, function(job) {
+                    me.set('job', job);
+                    if (job.status == 'READY' || job.status == 'ERROR') {
+                        neo.attributes.pathact.status = job.status;
+                        me._updateFileAttributes(neo.id, {
+                            pathact: neo.attributes.pathact
+                        }, function() {});
+                    }
+                });
+            }
+        }
+    });
+</script>

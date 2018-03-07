@@ -1,0 +1,440 @@
+<script src="bower_components/stevia-elements/src/manager/stevia-manager.js"></script>
+
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<script src="bower_components/cookies-js/dist/cookies.min.js"></script>
+<script src="bower_components/crypto-js/core.js"></script>
+<script src="bower_components/crypto-js/sha1.js"></script>
+
+<link rel="import" href="bower_components/stevia-elements/src/stv-header.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-application-behavior.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-footer.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-select.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-select-box.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-panel.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-search.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-tooltip.html">
+<link rel="import" href="bower_components/stevia-elements/src/dropdown/stv-dropdown.html">
+
+<link rel="import" href="bower_components/stevia-elements/src/file/stv-file-browser.html">
+<link rel="import" href="bower_components/stevia-elements/src/job/stv-job-browser.html">
+<link rel="import" href="bower_components/stevia-elements/src/stv-cluster-status.html">
+<link rel="import" href="bower_components/stevia-elements/src/report/stv-report.html">
+
+<link rel="import" href="bower_components/pathway-viewer/pathway-drug-viewer.html">
+
+<link rel="import" href="src/pathact-home.html">
+<link rel="import" href="src/pathact-form.html">
+
+<dom-module id="pathact-element">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning"></style>
+    <style>
+         :host {
+            display: block;
+            position: relative;
+            cursor: default;
+            font-size: 13px;
+            background-color: var(--default-primary-color);
+            height: 100%;
+            width: 100%;
+        }
+
+        stv-header {
+            position: absolute;
+            top: 0;
+        }
+
+        stv-footer {
+            position: absolute;
+            bottom: 0;
+        }
+
+        .content {
+            position: absolute;
+            width: 100%;
+            top: 50px;
+        }
+
+        #fileBrowser {}
+
+        #jobBrowser {}
+
+        @media (max-width: 1100px) {
+            .option-text {
+                display: none;
+            }
+        }
+
+        .userid {
+            color: var(--accent-color);
+            font-size: 16px;
+        }
+
+        #description {
+            color: var(--accent-color);
+            font-weight: normal;
+        }
+
+        pathact-home {
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        #viewer {
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+        }
+
+        pathact-form {
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+        }
+
+        #reportPanel {
+            position: fixed;
+            height: 80%;
+            width: 80%;
+            top: 50px;
+            left: 0;
+        }
+
+        #reportPanelContainer {
+            box-sizing: border-box;
+            width: 100%;
+            background-color: #fff !important;
+            overflow-y: scroll;
+            overflow-x: none;
+        }
+
+        #reportButton {
+            background-color: var(--dark-button-color) !important;
+            color: var(--text-primary-color) !important;
+        }
+
+        #reportButton:hover {
+            background-color: var(--light-button-color) !important;
+        }
+    </style>
+    <template>
+        <div class="content" menu-option="home,form,viewer">
+            <stv-panel hidden fixed modal closable id="configureDrugActionsPanel" on-hidden="handlePanelHidden">
+                <div class="header">
+                    <i class="fa fa-sliders"></i> Settings
+                </div>
+                <div id="drugActionList" class="container flex" style="width:650px; padding:7px;">
+                    <div class="horizontal layout">
+                        <div>
+                            <label class="stv">Configure fold change:</label>
+                            <br>
+                            <div style="width:200px">
+                                <input id="foldChangeInput" class="stv" type="number" step="0.1" min="0" value="{{foldChange::input}}" on-change="handleFoldChange">
+                            </div>
+                        </div>
+                        <div class="flex"></div>
+                        <div class="stv-btn stv-btn-shdw" on-click="handleResetDefaults">Reset defaults</div>
+                    </div>
+                    <br>
+                    <label class="stv">Configure drug action weight:</label>
+                    <br>
+                    <div class="list horizontal layout wrap">
+                        <template is="dom-repeat" items="{{drugActionList}}">
+                            <pdv-action-option style="width:315px" name="{{item.name}}" value="{{item.value}}" on-change="handleActionWeightChange"></pdv-action-option>
+                        </template>
+                    </div>
+                </div>
+            </stv-panel>
+        </div>
+
+        <div class="content" menu-option="viewer">
+            <pathway-drug-viewer id="viewer" path="sifs4CellMaps" init-path="sifs4CellMaps_init" valid-genes-file-name="valid_hgnc_signaling_genes.txt" drug-action-list="{{drugActionList}}" drug-action-map="{{drugActionMap}}" job-update-args="{{jobUpdateArgs}}" job-clear-args="{{jobClearArgs}}" fold-change="{{foldChange}}" on-goback="handleViewerGoBack" on-job-clear="handleJobClear" on-job-update="handleJobUpdate">
+                <div id="reportButton" on-click="handleReportButton" class="left-label stv-btn stv-btn-shdw" style="margin:0 3px 0 0;"><i class="fa fa-file-text-o"></i> &nbsp; Show report</div>
+            </pathway-drug-viewer>
+            <stv-panel hidden closable fixed modal id="reportPanel">
+                <div class="header">
+                    Report
+                </div>
+                <div id="reportPanelContainer" class="container">
+                    <stv-report id="report" hide-job-information></stv-report>
+                </div>
+                <div class="footer flex horizontal layout center-justified">
+                    <div class="stv-btn stv-btn-shdw" style="width:250px;" on-click="handleCloseReport">Close</div>
+                </div>
+            </stv-panel>
+        </div>
+        <div class="content" menu-option="form">
+            <pathact-form id="pathactForm" selectedOption="{{selectedOption}}" bioformats="{{bioformats}}" user-data="{{userData}}" allowed-tools="{{allowedTools}}" on-jobselect="handleJobSelect" on-need-refresh="handleUserNeedRefresh"></pathact-form>
+        </div>
+
+        <div class="content" menu-option="home">
+            <pathact-home id="home" on-start="handleHomeStart" isLogged="{{isLogged}}"></pathact-home>
+        </div>
+
+        <stv-header id="stvHeader" hide-jobs hide-browse selected-option="{{selectedOption}}" user-data="{{userData}}" on-login="handleLogin" on-logout="handleLogout">
+            <div class="icon">
+                <img src="images/icon.svg" style="height: 54px;margin: 8px 3px 0 0;">
+            </div>
+            <div class="title" style="margin-left:15px;">
+                <span>Path<span style="font-weight:normal;">Act</span></span>
+            </div>
+            <span id="description" class="description">
+                Actionable pathway workshop
+            </span>
+
+            <div id="menu" class="menu horizontal layout center flex">
+                <div style="margin-left:4vw;"></div>
+                <div title="" class="option" on-click="handleMenuOption" data-option="home">
+                    <i class="fa fa-home"></i>
+                    <span class="option-text">Home</span>
+                </div>
+                <div style="margin-left:2vw;"></div>
+                <div title="Jobs" class="option" on-click="handleMenuOption" data-option="form" login-required>
+                    <i class="fa fa-rocket"></i>
+                    <span class="option-text">Jobs</span>
+                </div>
+                <div class="flex"></div>
+                <div style="margin-left:3vw;"></div>
+                <div title="Settings" class="option" on-click="handleMenuPanel" data-panel="configureDrugActionsPanel" login-required login-visible>
+                    <i class="fa fa-sliders"></i>
+                    <span class="option-text">Settings</span>
+                </div>
+            </div>
+
+
+            <stv-dropdown dark class="helpmenu">
+                <div data-button><i class="fa fa-question-circle"></i></div>
+                <ul data-menu>
+                    <a href="http://pathact.babelomics.org/doc" target="_blank">
+                        <li>
+                            <i class="fa fa-book"></i> &nbsp; Documentation
+                        </li>
+                    </a>
+                    <li>
+                        <div on-mousedown="handleExample">
+                            <i class="fa fa-lightbulb-o"></i> &nbsp; Run example
+                        </div>
+                    </li>
+                </ul>
+            </stv-dropdown>
+            <stv-cluster-status id="clusterStatus" type="dark" class="cluster-status"></stv-cluster-status>
+        </stv-header>
+
+        <stv-footer menu-option="home,login,signup,profile,remember" class="horizontal layout center center-justified" style="padding:0 20px;">
+            <div style="text-align:center;">
+                PathAct v{{version}} by <span style="font-weight:bold;">Computational Genomics Department</span>
+                <br> Principe Felipe Research Center, Valencia, Spain 2017</div>
+        </stv-footer>
+    </template>
+
+    <script>
+        Polymer({
+            is: "pathact-element",
+            behaviors: [StvApplicationBehavior],
+            properties: {
+                bioformats: {
+                    type: Array,
+                    value: [BIOFORMATS["DATAMATRIX_EXPRESSION"]]
+                },
+                allowedTools: {
+                    type: Array,
+                    value: ['hipathia.pathact-init']
+                },
+                drugActionList: {
+                    type: Array,
+                    notify: true
+                },
+                drugActionMap: {
+                    type: Object,
+                    notify: true
+                },
+                foldChange: {
+                    type: Number
+                },
+                jobItem: {
+                    type: Object
+                },
+                jobUpdateArgs: {
+                    type: Object
+                },
+                jobClearArgs: {
+                    type: Object
+                }
+            },
+            selectedOptionChanged: function(neo, old) {
+                this.$.pathactForm.clean();
+            },
+            ready: function() {
+                var me = this;
+                this.selectedOption = "home";
+
+                var fc = localStorage.getItem("pathact_foldchange");
+                if (fc == null) {
+                    this.set('foldChange', 2);
+                    localStorage.setItem("pathact_foldchange", this.foldChange);
+                } else {
+                    this.set('foldChange', parseFloat(fc));
+                }
+
+                var localActions = localStorage.getItem("pathact_actions");
+                if (localActions == null) {
+                    this.loadDrugActions();
+                } else {
+                    var actions = JSON.parse(localActions);
+                    var actionsMap = JSON.parse(localStorage.getItem("pathact_actionsmap"));
+                    this.set('drugActionList', actions);
+                    this.set('drugActionMap', actionsMap);
+                }
+
+                this.set('jobUpdateArgs', {
+                    tool: 'hipathia',
+                    execution: 'pathact-update',
+                    executable: 'pathact-update.sh'
+                });
+                this.set('jobClearArgs', {
+                    tool: 'hipathia',
+                    execution: 'pathact-clear',
+                    executable: 'pathact-clear.sh'
+                });
+            },
+            handleResetDefaults: function(e) {
+                this.loadDrugActions();
+                this.set('foldChange', 2);
+                localStorage.setItem("pathact_foldchange", this.foldChange);
+            },
+            loadDrugActions: function() {
+                var me = this;
+                this._openRemoteFile('./conf/drug-actions.json', function(content) {
+                    var allActions = JSON.parse(content);
+                    var nameMap = {};
+                    var actions = [];
+                    var actionsMap = {};
+                    for (var i = 0; i < allActions.length; i++) {
+                        var a = allActions[i];
+                        var n = a.name.toLowerCase();
+                        if (nameMap[n] !== true) {
+                            nameMap[n] = true;
+                            var obj = {
+                                name: a.name,
+                                value: a.value
+                            };
+                            actions.push(obj);
+                            actionsMap[n] = obj;
+                        }
+                    }
+                    me.set('drugActionList', actions);
+                    me.set('drugActionMap', actionsMap);
+                    localStorage.setItem("pathact_actions", JSON.stringify(actions));
+                    localStorage.setItem("pathact_actionsmap", JSON.stringify(actionsMap));
+                });
+            },
+            handleActionWeightChange: function() {
+                localStorage.setItem("pathact_actions", JSON.stringify(this.drugActionList));
+                var actionsMap = {};
+                for (var i = 0; i < this.drugActionList.length; i++) {
+                    var a = this.drugActionList[i];
+                    actionsMap[a.name] = a;
+                }
+                localStorage.setItem("pathact_actionsmap", JSON.stringify(actionsMap));
+                this.set('drugActionMap', actionsMap);
+                this.$.viewer.$.geneSearch._processDrugRelatedGenes();
+            },
+            handleFoldChange: function() {
+                var fc = localStorage.setItem("pathact_foldchange", this.$.foldChangeInput.value);
+                this.set('foldChange', this.$.foldChangeInput.value);
+            },
+            handleFileSelect: function(e) {
+                // console.log("file");
+                // console.log(e.detail);
+            },
+            handleJobSelect: function(e) {
+                var job = e.detail;
+                var jobFolder = job.folder;
+                if (jobFolder && job.status === 'DONE') {
+                    this.jobItem = job;
+                    if (this.$.viewer.jobFolder != null) {
+                        if (this.$.viewer.jobFolder._id != jobFolder._id) {
+                            this.$.viewer.reset();
+                            this.$.viewer.set('jobFolder', jobFolder);
+                        }
+                    } else {
+                        this.$.viewer.reset();
+                        this.$.viewer.set('jobFolder', jobFolder);
+                    }
+                    this.set('selectedOption', 'viewer');
+                    this._loadReport();
+                }
+            },
+            handleJobClear: function(e) {
+                this._loadReport();
+            },
+            handleJobUpdate: function(e) {
+                this._loadReport();
+            },
+            _loadReport: function(job) {
+                this.$.report.set('job', null);
+                this.$.report.set('job', this.jobItem);
+            },
+            handleCloseReport: function() {
+                this.$.reportPanel.hide();
+            },
+            handleReportButton: function(e) {
+                var me = this;
+                this.$.reportPanel.show();
+            },
+            handleCloseJobResult: function(e) {
+                this.set('selectedOption', 'home');
+            },
+            handleLogin: function() {
+                // this.selectedOption = "home";
+                if (this._lastLogedRequest) {
+                    this._lastLogedRequest = null;
+                }
+                if (this._lastExampleRequest) {
+                    this.runExample(this._lastExampleRequest);
+                    this._lastExampleRequest = null;
+                }
+                this.$.home.isLogged = true;
+                this.setMenu('form');
+            },
+            handleLogout: function() {
+                this.$.home.isLogged = false;
+                this.setMenu('home');
+            },
+            handleHomeStart: function() {
+                if (this.$.stvHeader.isLogged != true) {
+                    this.$.stvHeader.anonymousSign();
+                }
+            },
+            handleViewerGoBack: function() {
+                this.setMenu('form');
+            },
+
+            /**/
+            handleExample: function(e) {
+                if (this.$.stvHeader.isLogged != true) {
+                    this._lastExampleRequest = true;
+                    this.$.stvHeader.anonymousSign();
+                } else {
+                    this.runExample();
+                }
+            },
+            runExample: function() {
+                this.async(function() {
+                    this.$.pathactForm.handleLoadExample();
+                }, 100);
+            },
+            _openRemoteFile: function(filepath, cb) {
+                var me = this;
+                var request = new XMLHttpRequest();
+                request.onload = function() {
+                    cb(this.responseText);
+                };
+                request.onerror = function() {
+                    console.log('Error loading remote file');
+                };
+                request.open("GET", filepath);
+                request.send();
+            }
+        });
+    </script>
+</dom-module>

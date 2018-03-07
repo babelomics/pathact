@@ -1,0 +1,70 @@
+<style is="custom-style">
+     :root {
+        /*--dark-primary-color: #211813;
+        --default-primary-color: #2f2219;*/
+        --dark-primary-color: #1e2429;
+        --default-primary-color: #293237;
+        --light-primary-color: #fafafa;
+        --light-secondary-color: #EDEDED;
+        --text-primary-color: #FFFFFF;
+        --accent-color: #ffa553;
+        --light-button-color: #ee6908;
+        --dark-button-color: #d75a00;
+        --primary-text-color: #212121;
+        --secondary-text-color: #555;
+        --divider-color: #ccc;
+        --hover-color: #eee;
+        --selected-color: #bbb;
+    }
+</style>
+<style>
+    [hidden] {
+        display: none !important;
+    }
+
+    html,
+    body {
+        font-family: 'Lato', 'Helvetica Neue', Helvetica, Arial, 'sans-serif' !important;
+        font-size: 13px;
+    }
+
+    body.fullbleed {
+        margin: 0;
+        height: 100vh;
+    }
+
+    body[unresolved] {
+        opacity: 0;
+        display: block;
+        overflow: hidden;
+        position: relative;
+    }
+
+    body {
+        transition: opacity ease-in 0.2s;
+    }
+
+    a {
+        transition: color 0.1s linear;
+        text-decoration: none;
+        color: var(--text-primary-color);
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    stv-header>.main {
+        font-weight: 300;
+    }
+
+    .pathact-note {
+        border-left-color: #ffb877;
+        background-color: #fae7d7;
+    }
+
+    .pathact-note::after {
+        content: '\f024';
+        color: #d75a00;
+    }
+</style>
